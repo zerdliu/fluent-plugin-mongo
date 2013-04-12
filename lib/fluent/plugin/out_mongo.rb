@@ -1,4 +1,5 @@
 module Fluent
+require 'socket'
 
 
 class MongoOutput < BufferedOutput
@@ -146,8 +147,12 @@ class MongoOutput < BufferedOutput
   end
 
   def collect_records(chunk)
+    @host = Socket.gethostname
+    @ip = Socket::getaddrinfo(@host, Socket::SOCK_STREAM)[0][3]
     records = []
     chunk.msgpack_each { |time, record|
+      record[ :hostname ] =  @host
+      record[ :localip ]   =  @ip 
       record[@time_key] = Time.at(time || record[@time_key]) if @include_time_key
       records << record
     }
